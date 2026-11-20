@@ -1,54 +1,6 @@
 {
   "version": 1,
   "skills": {
-    "agent-browser": {
-      "source": "vercel-labs/agent-browser",
-      "sourceType": "github",
-      "skillPath": "skills/agent-browser/SKILL.md",
-      "computedHash": "60a9cbe5af176150582c019e16e5d3703a41bb02d88438e881349876120d7944"
-    },
-    "better-accessibility": {
-      "source": "jakubkrehel/skills",
-      "sourceType": "github",
-      "skillPath": "skills/better-accessibility/SKILL.md",
-      "computedHash": "7fe3f3727dc1c15b5148e1b8d47f1b025f9886348ec8a33f4c4536aa5372cbbe"
-    },
-    "better-colors": {
-      "source": "jakubkrehel/skills",
-      "sourceType": "github",
-      "skillPath": "skills/better-colors/SKILL.md",
-      "computedHash": "b24b63ebd25658a95e5f791cd83552aca6554dd6746aa6065d930a9492fb9886"
-    },
-    "better-interface": {
-      "source": "jakubkrehel/skills",
-      "sourceType": "github",
-      "skillPath": "skills/better-interface/SKILL.md",
-      "computedHash": "c4f8a7862c00e63ae0df73fa29137f01a7fdd16354919e718dcf7e9f1a3f9445"
-    },
-    "better-layout": {
-      "source": "jakubkrehel/skills",
-      "sourceType": "github",
-      "skillPath": "skills/better-layout/SKILL.md",
-      "computedHash": "822bb216c43ce743221b1afe42a21c7efc80d85b71847cf109c33af9513da655"
-    },
-    "better-typography": {
-      "source": "jakubkrehel/skills",
-      "sourceType": "github",
-      "skillPath": "skills/better-typography/SKILL.md",
-      "computedHash": "6546baea71117ed05b74dd9fb4ebf25300b3a8c9fab1751fd9981701550bd1b7"
-    },
-    "better-ui": {
-      "source": "jakubkrehel/skills",
-      "sourceType": "github",
-      "skillPath": "skills/better-ui/SKILL.md",
-      "computedHash": "8a21f243313aa3b7f6bb5e13d241eef07926fe52bc0a866d154a10f88b7c007a"
-    },
-    "better-writing": {
-      "source": "jakubkrehel/skills",
-      "sourceType": "github",
-      "skillPath": "skills/better-writing/SKILL.md",
-      "computedHash": "5dcd97f7df29f92ef99901601b2a63e2c709f49f9748fd6b61c751b667468564"
-    },
     "brainstorming": {
       "source": "obra/superpowers",
       "sourceType": "github",
@@ -60,12 +12,6 @@
       "sourceType": "github",
       "skillPath": "skills/dispatching-parallel-agents/SKILL.md",
       "computedHash": "b011107f17188e0b2898bb1856b5bac8b49537cc86e737c82126558a235bd62a"
-    },
-    "emil-design-eng": {
-      "source": "emilkowalski/skill",
-      "sourceType": "github",
-      "skillPath": "skills/emil-design-eng/SKILL.md",
-      "computedHash": "2483020b5bbaab030d6b3463bfba49c8d9c2cd8dea4d9fba836dbd471f1fb706"
     },
     "executing-plans": {
       "source": "obra/superpowers",
@@ -85,12 +31,6 @@
       "skillPath": "skills/finishing-a-development-branch/SKILL.md",
       "computedHash": "4f571e7befb8b0946d9d7770232c818812412e9ab1dfb811f847edfba1fc6275"
     },
-    "oklch-skill": {
-      "source": "jakubkrehel/oklch-skill",
-      "sourceType": "github",
-      "skillPath": "skills/oklch-skill/SKILL.md",
-      "computedHash": "3825dcd7ea094655e9f07280185ba9da1d10d08f44cf06a8c316eb42334d7cd3"
-    },
     "receiving-code-review": {
       "source": "obra/superpowers",
       "sourceType": "github",
@@ -102,12 +42,6 @@
       "sourceType": "github",
       "skillPath": "skills/requesting-code-review/SKILL.md",
       "computedHash": "004f340ae65811095d6a9bb0a759c87d0a8085c5e705dbb019b011626293d2e9"
-    },
-    "reshet-ui": {
-      "source": "reshet-team/reshet-ui",
-      "sourceType": "github",
-      "skillPath": "skills/reshet-ui/SKILL.md",
-      "computedHash": "9b80c7eaabee47c99319ecccabfdd38bba387145c5940282c14c146d36339182"
     },
     "subagent-driven-development": {
       "source": "obra/superpowers",
@@ -121,18 +55,6 @@
       "skillPath": "skills/systematic-debugging/SKILL.md",
       "computedHash": "a2750dfbaed1690da73b120254892c4f926b4576cb82eb16fc877783941fe39b"
     },
-    "tanstack-query-best-practices": {
-      "source": "deckardger/tanstack-agent-skills",
-      "sourceType": "github",
-      "skillPath": "skills/tanstack-query/SKILL.md",
-      "computedHash": "8e5a7e3cdc6900c3967945658aa277629ba7b5264ddadc017ee2b76359456719"
-    },
-    "tanstack-router-best-practices": {
-      "source": "deckardger/tanstack-agent-skills",
-      "sourceType": "github",
-      "skillPath": "skills/tanstack-router/SKILL.md",
-      "computedHash": "659549bfcacc5767cd489fcbceb2889247bd38c82f0a37c282da754eb2603f63"
-    },
     "test-driven-development": {
       "source": "obra/superpowers",
       "sourceType": "github",
@@ -145,12 +67,6 @@
       "skillPath": "plugins/javascript-typescript/skills/typescript-advanced-types/SKILL.md",
       "computedHash": "8cbf2bf600f392d7260e476e3202932a876e2281cda3b15a8b6a5a43f383252d"
     },
-    "uniform-best-practices": {
-      "source": "UniFormTS/UniForm",
-      "sourceType": "github",
-      "skillPath": "skills/uniform-best-practices/SKILL.md",
-      "computedHash": "936d9be73cabb1bf98663e3c0799c69605975b26620187d983d47094341428b0"
-    },
     "using-git-worktrees": {
       "source": "obra/superpowers",
       "sourceType": "github",
@@ -162,18 +78,6 @@
       "sourceType": "github",
       "skillPath": "skills/using-superpowers/SKILL.md",
       "computedHash": "c7abe8bdc2099bbe4f245454d32c7563ccd2bb41dcc218b02b461c2acc3c6ae6"
-    },
-    "vercel-composition-patterns": {
-      "source": "vercel-labs/agent-skills",
-      "sourceType": "github",
-      "skillPath": "skills/composition-patterns/SKILL.md",
-      "computedHash": "f98931159fa9c7fed043bcd18a891a46dcf89ababa38df13a4c5b7b30dc0ce07"
-    },
-    "vercel-react-best-practices": {
-      "source": "vercel-labs/agent-skills",
-      "sourceType": "github",
-      "skillPath": "skills/react-best-practices/SKILL.md",
-      "computedHash": "3219a1944e404ffc14d1d9d6aef6dd2e3855b81387ee0a044ccbfe14d34c2357"
     },
     "verification-before-completion": {
       "source": "obra/superpowers",

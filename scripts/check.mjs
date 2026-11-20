@@ -16,7 +16,6 @@ const tasks = [
   'typecheck',
   'format:check',
   'lint:check',
-  'lint:css',
   'knowledge:validate:run',
   mode === 'changed' ? 'test:changed' : 'test:quiet',
 ]

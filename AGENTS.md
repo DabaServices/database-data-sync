@@ -1,6 +1,6 @@
-# Reshet Template Guidelines
+# database-data-sync Guidelines
 
-React 19 + Vite single-page app (TanStack Router + Query, Base UI + Reshet UI, SCSS Modules, TypeScript strict, Vitest, pnpm). Conventions and knowledge load lazily as described below.
+Node 24 + TypeScript CronJob (pg, zod, Vitest, pnpm) that copies selected production PostgreSQL tables into pre-prod and non-prod. Conventions and knowledge load lazily as described below.
 
 ## Workflow
 
@@ -36,33 +36,31 @@ Classify the task in one line before starting; the user can override. When unsur
 
 Run these instead of hand-written invocations; they run in parallel and print only failing tasks.
 
-- `pnpm check:changed`: typecheck, format, lint, stylelint, knowledge validation, and only tests related to uncommitted changes. **Run after every change.**
+- `pnpm check:changed`: typecheck, format, lint, knowledge validation, and only tests related to uncommitted changes. **Run after every change.**
 - `pnpm check:all`: same with every test. Run before finishing Full or broad tasks.
 - Autofix: `pnpm format`.
 - One test file: `pnpm exec vitest run <path> --reporter=agent`.
-- `pnpm dev` (port 5173), `pnpm generate-routes`, and full-output scripts (`pnpm test`, `pnpm check`, `pnpm build`) are for humans and CI; if you must run them, pipe through `tail -n 60` (macOS/Linux/Git Bash) or `Select-Object -Last 60` (PowerShell).
+- Full-output scripts (`pnpm test`, `pnpm check`, `pnpm build`) are for humans and CI; if you must run them, pipe through `tail -n 60` (macOS/Linux/Git Bash) or `Select-Object -Last 60` (PowerShell).
 
 ## Token discipline
 
-- **Search narrow:** `rg` (respects `.gitignore` and `.ignore`) with a path and a literal symbol, e.g. `rg -n "Symbol" src/features`; `rg -l` or `-m 20` for locations only. Never `grep -r` from the root.
-- **Read narrow:** read line ranges of large files; batch independent reads and searches in one turn. Do not read `pnpm-lock.yaml`, `src/routeTree.gen.ts`, `dist/`, `storybook-static/`, or SVG/font assets unless the task is about them (denied in `.claude/settings.json`).
+- **Search narrow:** `rg` (respects `.gitignore` and `.ignore`) with a path and a literal symbol, e.g. `rg -n "Symbol" src/sync`; `rg -l` or `-m 20` for locations only. Never `grep -r` from the root.
+- **Read narrow:** read line ranges of large files; batch independent reads and searches in one turn. Do not read `pnpm-lock.yaml` or `dist/` unless the task is about them (denied in `.claude/settings.json`).
 - **Subagents:** each starts cold, so they cost more in total. Use `finder` only for broad exploration and `mechanical-editor` only for precisely specified mechanical edits (`.claude/agents/`). Never for a question a single `rg` answers. Ask for paths, line numbers, and a short summary, not file contents.
 - **Stop** when verification passes; report briefly without restating the diff.
 
 Common searches:
 
-- Route for a path: `rg -n "createFileRoute\('.*<path>" src/routes`
-- Feature code: `src/features/<feature>/`
-- Query definitions: `rg -n "queryOptions\(" src`
-- Design tokens: `rg -n "^\s*--<token>" src/theme`
-- Shared component: `rg -n "export .*<Name>" src/components`
+- Sync logic: `src/sync/`
+- DB helpers (interfaces, quoting, guard, pg adapter): `src/db/`
+- Env config: `src/config/env.ts` (databases), `src/config/tables.ts` (`SYNC_TABLES`)
 
 ## Layout
 
-- `src/`: app code (`components/ui` domain-free primitives, `components/<group>` shared app-aware components, `features/<feature>` slices, `hooks`, `lib`, `queries`, `routes`, `theme`, `types`, `utils`). Details are in the conventions.
+- `src/`: `index.ts` (entry), `config/`, `db/`, `sync/`, `log.ts`. Details are in the conventions.
+- `Dockerfile`, `k8s/cronjob.yaml`: image and CronJob manifest.
 - `knowledge/`: domain and stack facts. `.agents/skills/`: canonical skill store, symlinked into `.claude/skills/` and `.kiro/skills/`; skills load from the repo root.
 - `.github/copilot-instructions.md` is a symlink to this file; `CLAUDE.md` imports it; Kiro loads it natively.
-- Turning this template into a monorepo: [docs/MONOREPO.md](docs/MONOREPO.md) (only when asked).
 
 ## Learnings
 

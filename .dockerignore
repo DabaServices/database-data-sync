@@ -1,0 +1,12 @@
+node_modules
+dist
+.git
+.env
+.env.*
+docs
+knowledge
+.agents
+.claude
+.kiro
+.github
+.vscode

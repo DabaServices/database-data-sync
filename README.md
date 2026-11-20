@@ -1,92 +1,74 @@
-# reshet-template
+# database-data-sync
 
-An opinionated React starter template, used internally by the Reshet team.
+A CronJob (run once or twice a day) that copies data from selected **production** PostgreSQL tables into the **pre-prod** and **non-prod** databases. Data only: the table structure (DDL) must already exist in the targets.
 
-## Stack
+## How it works
 
-| Layer             | Technology                           |
-| ----------------- | ------------------------------------ |
-| Framework         | React 19 + Vite                      |
-| Routing           | TanStack Router (file-based)         |
-| Server state      | TanStack Query                       |
-| UI primitives     | Base UI (`@base-ui/react`)           |
-| Component library | Reshet UI                            |
-| Styling           | SCSS Modules + CSS custom properties |
-| Language          | TypeScript (strict)                  |
-| Testing           | Vitest + Testing Library             |
-| Package manager   | pnpm                                 |
+For each target (pre-prod, then non-prod), independently:
 
-## Quick Start
+1. Open production in a `READ ONLY REPEATABLE READ` transaction (one consistent snapshot).
+2. In a single target transaction, run one `TRUNCATE` of all configured tables.
+3. For each table, in the configured order, stream `COPY (SELECT * FROM t) TO STDOUT` from production into `COPY t FROM STDIN` on the target.
+4. `COMMIT`. On any error the target is rolled back and keeps its previous data.
+
+A failure on one target does not stop the other. The process exits with code 1 if any target failed. Logs are JSON lines on stdout (per table and per target: rows and duration).
+
+## Configuration
+
+Each database has its own prefixed variables (`PROD_`, `PREPROD_`, `NONPROD_`):
+
+| Variable                                               | Description                                                          |
+| ------------------------------------------------------ | -------------------------------------------------------------------- |
+| `<PREFIX>_DB_HOST`, `<PREFIX>_DB_USER`                 | Host and user (use a read-only user for prod)                        |
+| `<PREFIX>_DB_NAME`                                     | Database name                                                        |
+| `<PREFIX>_DB_SCHEMA`                                   | Optional; sets `search_path` (default `shoval`)                      |
+| `NONPROD_DB_PASSWORD`                                  | Non-prod only: password auth, no SSL                                 |
+| `CERTIFICATE_CA`, `CERTIFICATE_KEY`, `CERTIFICATE_CSR` | Prod and pre-prod: SSL with client certificate (`CSR` is the `cert`) |
+
+Prod and pre-prod connect over SSL (`rejectUnauthorized: true`) without a password; non-prod connects with a password and no SSL. Targets need `TRUNCATE` and `INSERT`; prod needs `SELECT`. See [`.env.example`](.env.example). The job refuses to run if a target has the same host and database name as production.
+
+**Tables:** set `SYNC_TABLES` to a comma- or newline-separated list of the tables to copy (all rows and columns; every other table in the schema is left alone), e.g. `shoval.parents,shoval.children`. Write `schema.table` names exactly as they appear in the catalog (names are case-sensitive), with referenced (parent) tables before the tables that reference them. The job fails before connecting if the list is empty, malformed or has duplicates.
+
+## Assumptions
+
+- Target tables have the same columns in the same order as production.
+- Sequences are not reset after the copy.
+- The default port (5432) is used for every database.
+- The same-database guard cannot detect DNS aliases that point at production.
+
+## Run locally
 
 ```bash
 pnpm install
-pnpm dev       # http://localhost:5173
+pnpm build
+node --env-file=.env dist/index.js
 ```
 
-## Project Structure
-
-```
-src/
-├── components/              # Global shared components (not tied to any feature)
-│   ├── ui/                  # Atomic UI primitives (Button, Input, …)
-│   └── <other>/             # Other global components (e.g., error-boundary, icons)
-├── features/                # Feature-driven modules — one folder per route domain
-│   └── <feature>/
-│       ├── components/      # UI components specific to this feature
-│       ├── hooks/           # Custom hooks for this feature's logic
-│       ├── services/        # API calls, query/mutation definitions
-│       └── utils/           # Feature-scoped pure utilities
-├── hooks/                   # Global utility hooks (useAuth, useDebounce, …)
-├── lib/                     # Third-party configurations (router, queryClient, …)
-├── routes/                  # Routing layer — pure orchestration, no business logic
-│   ├── __root.tsx           # Root layout (providers, devtools)
-│   └── index.tsx            # Each file maps to a URL and imports from features/
-├── theme/                   # Design tokens (SCSS) + ThemeProvider
-├── types/                   # Global TypeScript types and declarations
-├── utils/                   # Global pure utilities (formatting, date, …)
-├── routeTree.gen.ts         # Auto-generated by TanStack Router — do not edit
-└── main.tsx                 # App entry point
-```
-
-## Conventions
-
-Architecture, naming, query, UI, and testing rules live in [`.claude/rules/conventions/`](.claude/rules/conventions/) (index: [`docs/conventions/index.md`](docs/conventions/index.md)). Notes that are not rules:
-
-- Theming: `ThemeProvider` in `src/theme/useTheme.tsx` exposes `{ theme, setTheme, resolved }`, supports `"light"`, `"dark"`, `"system"`, persists to `localStorage`, and applies `data-theme` on `<html>`. Tokens are OKLCH CSS custom properties in `src/theme/`.
-- RTL: the root layout wraps the app in Base UI's `DirectionProvider direction="rtl"` (font: Heebo). Change it in `src/routes/__root.tsx` for LTR projects.
-- Path alias: `@/` resolves to `src/`.
-
-## Working with AI agents
-
-`AGENTS.md` is the single entrypoint (Claude Code, Copilot, and Kiro all read it). It defines task tiers, lazy loading of conventions and `knowledge/`, and the quiet `pnpm check:changed` / `pnpm check:all` scripts. Skills live in `.agents/skills/` and are symlinked into `.claude/skills/` and `.kiro/skills/`.
-
-**Windows:** symlinks need Developer Mode (or an elevated shell) and `git config core.symlinks true` set before cloning; otherwise git writes them as text files. Install ripgrep (`winget install BurntSushi.ripgrep.MSVC`) and run `corepack enable`. macOS: `brew install ripgrep`.
-
-To turn this template into a pnpm + Turbo monorepo, point an agent at [`docs/MONOREPO.md`](docs/MONOREPO.md).
-
-## Adding Components with Reshet UI
-
-Reshet UI is the Reshet team's shadcn-compatible component registry. Add a component with:
+## Deploy
 
 ```bash
-pnpx shadcn@latest add @reshet-ui/<component-name>
+docker build -t <registry>/database-data-sync:<tag> .
+docker push <registry>/database-data-sync:<tag>
 ```
 
-Components are written into `src/components/ui/`.
+Then in [`k8s/cronjob.yaml`](k8s/cronjob.yaml) set the image, `schedule` (default `0 2,14 * * *`) and `timeZone`, create a Secret named `database-data-sync` with the password and certificate keys (`NONPROD_DB_PASSWORD`, `CERTIFICATE_CA`, `CERTIFICATE_KEY`, `CERTIFICATE_CSR`), adjust the plain `*_DB_*` values in the manifest, and apply it. `concurrencyPolicy: Forbid` prevents overlapping runs.
 
 ## Scripts
 
-| Command                | Description                                |
-| ---------------------- | ------------------------------------------ |
-| `pnpm dev`             | Start dev server on port 5173              |
-| `pnpm build`           | Type-check and build for production        |
-| `pnpm preview`         | Preview the production build               |
-| `pnpm test`            | Run unit tests                             |
-| `pnpm typecheck`       | Type-check without emitting                |
-| `pnpm lint`            | Lint with ESLint                           |
-| `pnpm lint:css`        | Lint SCSS with Stylelint                   |
-| `pnpm format`          | Format and auto-fix with Prettier + ESLint |
-| `pnpm check`           | Run format check, lint, and typecheck      |
-| `pnpm check:changed`   | Quiet checks + tests for changed files     |
-| `pnpm check:all`       | Quiet checks + all tests                   |
-| `pnpm generate-routes` | Regenerate the TanStack Router route tree  |
+| Command              | Description                                                    |
+| -------------------- | -------------------------------------------------------------- |
+| `pnpm build`         | Compile TypeScript to `dist/`                                  |
+| `pnpm start`         | Run the compiled job                                           |
+| `pnpm test`          | Run unit tests                                                 |
+| `pnpm typecheck`     | Type-check without emitting                                    |
+| `pnpm lint`          | Lint with ESLint                                               |
+| `pnpm format`        | Format and auto-fix with Prettier + ESLint                     |
+| `pnpm check`         | Run format check, lint, and typecheck                          |
+| `pnpm check:changed` | Quiet checks + tests for changed files (use after each change) |
+| `pnpm check:all`     | Quiet checks + all tests                                       |
+
+## Conventions and AI agents
+
+Rules live in [`.claude/rules/conventions/`](.claude/rules/conventions/) (index: [`docs/conventions/index.md`](docs/conventions/index.md)); domain and stack facts in [`knowledge/`](knowledge/). [`AGENTS.md`](AGENTS.md) is the single entrypoint for Claude Code, Copilot, and Kiro. Skills live in `.agents/skills/` and are symlinked into `.claude/skills/` and `.kiro/skills/`.
+
+**Windows:** symlinks need Developer Mode (or an elevated shell) and `git config core.symlinks true` set before cloning; otherwise git writes them as text files. Install ripgrep (`winget install BurntSushi.ripgrep.MSVC`) and run `corepack enable`. macOS: `brew install ripgrep`.

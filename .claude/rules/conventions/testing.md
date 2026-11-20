@@ -1,6 +1,6 @@
 ---
 paths:
-  - 'src/**/*.{spec,test}.{ts,tsx}'
+  - 'src/**/*.test.ts'
 status: adopted
 ---
 
@@ -9,12 +9,11 @@ status: adopted
 - Configuration, schema, and wiring changes may be tested after implementation.
 - **Enforced:** none
 
-### CONV-TEST-02: Test observable behavior (rendered output, calls at boundaries), not implementation details.
+### CONV-TEST-02: Test observable behavior at boundaries (SQL statements issued, commit or rollback, results, exit status) using `createFakeDatabase`; no real database in unit tests.
 
 - Cover credible regressions, not every branch.
-- Prefer accessible queries in order: `getByRole`, then `getByLabelText`, then `getByText`; avoid test ids and internals.
 - **Enforced:** none
 
-### CONV-TEST-03: Colocate tests next to the code as `*.test.ts(x)`.
+### CONV-TEST-03: Colocate tests next to the code as `*.test.ts`.
 
 - **Enforced:** none

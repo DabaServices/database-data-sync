@@ -10,18 +10,9 @@ lerna-debug.log*
 # TS
 node_modules
 dist
-dist-ssr
 build
 *.local
 *.tsbuildinfo
-storybook-static
-public/r
-.nitro
-.tanstack
-.wrangler
-.output
-.vinxi
-__unconfig*
 todos.json
 
 # Environment variables

@@ -2,7 +2,6 @@ sections:
   - id: tech-stack
     file: tech-stack.yaml
     always_load: true
-  # Add one entry per domain file, e.g.:
-  # - id: <feature>
-  #   file: domain/<feature>.yaml
-  #   relevant_when: working on <feature> behavior or src/features/<feature>/*
+  - id: data-sync
+    file: domain/data-sync.yaml
+    relevant_when: working on sync behavior, src/sync/*, src/db/*, src/config/*, or deployment

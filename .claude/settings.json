@@ -17,9 +17,7 @@
       "Read(./**/.env)",
       "Read(./**/.env.*)",
       "Read(./pnpm-lock.yaml)",
-      "Read(./src/routeTree.gen.ts)",
-      "Read(./dist/**)",
-      "Read(./storybook-static/**)"
+      "Read(./dist/**)"
     ]
   },
   "hooks": {

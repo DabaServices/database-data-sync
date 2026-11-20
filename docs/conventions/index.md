@@ -4,9 +4,7 @@ For agents without native rules support (Claude Code and VS Code Copilot attach 
 
 | File                                                               | Scope                                          | Status  |
 | ------------------------------------------------------------------ | ---------------------------------------------- | ------- |
-| [repository.md](../../.claude/rules/conventions/repository.md)     | all files (imports, naming, comments, Remeda)  | adopted |
-| [typescript.md](../../.claude/rules/conventions/typescript.md)     | `src/**/*.{ts,tsx}`                            | adopted |
-| [architecture.md](../../.claude/rules/conventions/architecture.md) | `src/**` (feature slices, `ui/` boundary, RTL) | adopted |
-| [queries.md](../../.claude/rules/conventions/queries.md)           | `queries.ts`, `src/queries/`, features, routes | adopted |
-| [ui.md](../../.claude/rules/conventions/ui.md)                     | `src/components/`, `src/theme/`, SCSS, TSX     | adopted |
-| [testing.md](../../.claude/rules/conventions/testing.md)           | `src/**/*.{spec,test}.{ts,tsx}`                | adopted |
+| [repository.md](../../.claude/rules/conventions/repository.md)     | all files (imports, naming, comments, secrets) | adopted |
+| [typescript.md](../../.claude/rules/conventions/typescript.md)     | `src/**/*.ts`, `*.ts`                          | adopted |
+| [architecture.md](../../.claude/rules/conventions/architecture.md) | `src/**/*.ts` (sync flow, read-only prod, SQL) | adopted |
+| [testing.md](../../.claude/rules/conventions/testing.md)           | `src/**/*.test.ts`                             | adopted |

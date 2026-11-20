@@ -1,0 +1,31 @@
+system:
+  description: CronJob that replaces the data of selected pre-prod and non-prod PostgreSQL tables with a copy of the same production tables. Data only; DDL already exists in the targets.
+  models:
+    - Tables listed in the SYNC_TABLES env var (schema.table, referenced tables first); all rows and columns, nothing else in the schema is touched
+  algorithm:
+    - step: Validate
+      description: Validate the table list and the per-database connection settings before connecting.
+      details:
+        - Prod and pre-prod connect over SSL with a shared client certificate and no password; non-prod uses a password without SSL.
+        - Each connection sets search_path from its optional DB_SCHEMA (default shoval).
+        - A target pointing at the production database (host, database name) aborts the run.
+    - step: Per target (preprod, then nonprod)
+      description: Sync one target in isolation.
+      details:
+        - Open prod in a READ ONLY REPEATABLE READ transaction for a consistent snapshot.
+        - On the target, in one transaction, run a single TRUNCATE of all configured tables.
+        - For each table in config order, stream COPY TO STDOUT from prod into COPY FROM STDIN on the target.
+        - COMMIT on success; ROLLBACK on any error so the target keeps its previous data.
+    - step: Report
+      description: Log JSON lines per table and per target; exit code 1 if any target failed.
+  design_decisions:
+    - rule: One TRUNCATE statement for all tables, no CASCADE.
+      rationale: Postgres refuses to truncate FK-referenced tables separately; CASCADE could wipe tables outside the list.
+    - rule: Load tables in config order instead of deferring constraints.
+      rationale: SET CONSTRAINTS DEFERRED only works for DEFERRABLE foreign keys.
+    - rule: Assumes target tables have the same columns in the same order as prod; sequences are not reset.
+      rationale: DDL is managed elsewhere and kept identical; SELECT * keeps the copy simple.
+    - rule: The source transaction is never ended with an explicit ROLLBACK; it ends when runSync closes the connection.
+      rationale: If a target COPY fails, the source COPY OUT is aborted mid-stream and the connection stays busy, so a ROLLBACK would wait forever and hang the job.
+    - rule: The same-database guard compares host and database name only (the default port is always used).
+      rationale: DNS aliases to the production host cannot be detected; use a read-only prod user.

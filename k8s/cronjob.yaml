@@ -1,0 +1,50 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: database-data-sync
+spec:
+  schedule: '0 2,14 * * *' # placeholder: twice a day
+  timeZone: Asia/Jerusalem
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 3600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 7200
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: database-data-sync
+              image: registry.example.com/database-data-sync:latest # placeholder
+              env:
+                # Non-secret settings: replace the placeholder values
+                - name: SYNC_TABLES
+                  value: shoval.parents,shoval.children # placeholder: tables to copy, referenced tables first
+                - { name: PROD_DB_HOST, value: prod-host }
+                - { name: PROD_DB_USER, value: readonly_user }
+                - { name: PROD_DB_NAME, value: app }
+                - { name: PROD_DB_SCHEMA, value: shoval }
+                - { name: PREPROD_DB_HOST, value: preprod-host }
+                - { name: PREPROD_DB_USER, value: sync_user }
+                - { name: PREPROD_DB_NAME, value: app }
+                - { name: PREPROD_DB_SCHEMA, value: shoval }
+                - { name: NONPROD_DB_HOST, value: nonprod-host }
+                - { name: NONPROD_DB_USER, value: sync_user }
+                - { name: NONPROD_DB_NAME, value: app }
+                - { name: NONPROD_DB_SCHEMA, value: shoval }
+                # Secrets
+                - name: NONPROD_DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef: { name: database-data-sync, key: NONPROD_DB_PASSWORD }
+                - name: CERTIFICATE_CA
+                  valueFrom:
+                    secretKeyRef: { name: database-data-sync, key: CERTIFICATE_CA }
+                - name: CERTIFICATE_KEY
+                  valueFrom:
+                    secretKeyRef: { name: database-data-sync, key: CERTIFICATE_KEY }
+                - name: CERTIFICATE_CSR
+                  valueFrom:
+                    secretKeyRef: { name: database-data-sync, key: CERTIFICATE_CSR }
