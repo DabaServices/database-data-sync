@@ -1,0 +1,10 @@
+pnpm-lock.yaml
+src/routeTree.gen.ts
+docs/superpowers/
+storybook-static/
+dist/
+*.svg
+*.ttf
+*.woff
+*.woff2
+*.png

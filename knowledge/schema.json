@@ -1,0 +1,139 @@
+{
+  "title": "Domain Knowledge File",
+  "description": "Schema for knowledge/domain/*.yaml files. Supports two shapes: entity files (Prisma model documentation) and system files (algorithmic/behavioral documentation).",
+  "oneOf": [{ "$ref": "#/definitions/EntityFile" }, { "$ref": "#/definitions/SystemFile" }],
+  "definitions": {
+    "EntityFile": {
+      "type": "object",
+      "required": ["entities"],
+      "additionalProperties": false,
+      "properties": {
+        "entities": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "$ref": "#/definitions/Entity"
+          }
+        }
+      }
+    },
+    "SystemFile": {
+      "type": "object",
+      "required": ["system"],
+      "additionalProperties": false,
+      "properties": {
+        "system": {
+          "$ref": "#/definitions/System"
+        }
+      }
+    },
+    "Entity": {
+      "type": "object",
+      "required": ["fields", "relations", "invariants"],
+      "additionalProperties": false,
+      "properties": {
+        "fields": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "relations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Relation"
+          }
+        },
+        "invariants": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Invariant"
+          }
+        }
+      }
+    },
+    "System": {
+      "type": "object",
+      "required": ["description", "models", "algorithm", "design_decisions"],
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "models": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Prisma models involved in this system"
+        },
+        "algorithm": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AlgorithmStep"
+          }
+        },
+        "design_decisions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Invariant"
+          }
+        }
+      }
+    },
+    "AlgorithmStep": {
+      "type": "object",
+      "required": ["step", "description"],
+      "additionalProperties": false,
+      "properties": {
+        "step": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "Relation": {
+      "type": "object",
+      "required": ["type", "entity"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["belongs_to", "has_one", "has_many"]
+        },
+        "entity": {
+          "type": "string"
+        },
+        "field": {
+          "type": "string",
+          "description": "The FK field name on this entity (for belongs_to)"
+        },
+        "onDelete": {
+          "type": "string",
+          "enum": ["Cascade", "Restrict", "SetNull", "NoAction"]
+        }
+      }
+    },
+    "Invariant": {
+      "type": "object",
+      "required": ["rule"],
+      "additionalProperties": false,
+      "properties": {
+        "rule": {
+          "type": "string"
+        },
+        "rationale": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

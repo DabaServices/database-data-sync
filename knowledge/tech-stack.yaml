@@ -1,0 +1,13 @@
+stack:
+  framework: React 19 + Vite (React Compiler enabled)
+  routing: TanStack Router, file-based under src/routes/ (generated src/routeTree.gen.ts)
+  server_state: TanStack Query, requests defined with queryOptions()
+  ui: Base UI (@base-ui/react) + Reshet UI registry components in src/components/ui/
+  styling: SCSS Modules + OKLCH CSS custom properties in src/theme/
+  direction: RTL-first (DirectionProvider in src/routes/__root.tsx), font Heebo
+  language: TypeScript strict
+  testing: Vitest + Testing Library (jsdom)
+  utilities: Remeda (pipe, groupBy, mapValues, range, isString)
+  tooling: pnpm, ESLint flat config, Stylelint, Prettier
+gotchas:
+  - src/routeTree.gen.ts is generated; regenerate with pnpm generate-routes, never edit it.

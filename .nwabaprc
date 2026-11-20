@@ -1,0 +1,8 @@
+{
+  "base": "./dist",
+  "conn_server": "http://gw.dev.erp.idf",
+  "abap_package": "/ATAL/PUR_DEV",
+  "abap_bsp": "/ATAL/{PROJECT-NAME}",
+  "abap_bsp_text": "{PROJECT-DESCRIPTION}",
+  "abap_transport": "{GW-CR}"
+}

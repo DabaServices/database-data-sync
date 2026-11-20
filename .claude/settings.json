@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(rg *)",
+      "Bash(ls *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(pnpm check:changed)",
+      "Bash(pnpm check:all)",
+      "Bash(pnpm exec vitest run *)"
+    ],
+    "deny": [
+      "Bash(rg *--pre*)",
+      "Read(./**/.env)",
+      "Read(./**/.env.*)",
+      "Read(./pnpm-lock.yaml)",
+      "Read(./src/routeTree.gen.ts)",
+      "Read(./dist/**)",
+      "Read(./storybook-static/**)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/format-edited-file.mjs\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
