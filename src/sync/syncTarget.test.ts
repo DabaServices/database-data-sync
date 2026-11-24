@@ -7,7 +7,7 @@ const tables = ['public.parents', 'public.children']
 const silent = createLogger(() => undefined)
 
 describe('syncTarget', () => {
-  it('truncates all tables once, copies in order inside one transaction, then commits', async () => {
+  it('truncates all tables once, copies in binary in order inside one transaction, then commits', async () => {
     const source = createFakeDatabase()
     const target = createFakeDatabase({ rowsPerCopy: 2 })
 
@@ -23,14 +23,14 @@ describe('syncTarget', () => {
     expect(target.statements).toEqual([
       'BEGIN',
       'TRUNCATE "public"."parents", "public"."children"',
-      'COPY "public"."parents" FROM STDIN',
-      'COPY "public"."children" FROM STDIN',
+      'COPY "public"."parents" FROM STDIN WITH (FORMAT binary)',
+      'COPY "public"."children" FROM STDIN WITH (FORMAT binary)',
       'COMMIT',
     ])
     expect(source.statements).toEqual([
       'BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY',
-      'COPY (SELECT * FROM "public"."parents") TO STDOUT',
-      'COPY (SELECT * FROM "public"."children") TO STDOUT',
+      'COPY (SELECT * FROM "public"."parents") TO STDOUT WITH (FORMAT binary)',
+      'COPY (SELECT * FROM "public"."children") TO STDOUT WITH (FORMAT binary)',
     ])
   })
 
@@ -57,9 +57,9 @@ describe('syncTarget', () => {
     expect(target.statements.at(-1)).toBe('ROLLBACK')
   })
 
-  it('logs rows per table', async () => {
-    const lines: string[] = []
-    const logger = createLogger((line) => lines.push(line))
+  it('logs the truncate, then rows per table', async () => {
+    const lines: Record<string, unknown>[] = []
+    const logger = createLogger((line) => lines.push(JSON.parse(line) as Record<string, unknown>))
 
     await syncTarget({
       source: createFakeDatabase(),
@@ -69,11 +69,9 @@ describe('syncTarget', () => {
       targetName: 'nonprod',
     })
 
-    expect(JSON.parse(lines[0] ?? '{}')).toMatchObject({
-      message: 'table copied',
-      target: 'nonprod',
-      table: 'public.parents',
-      rows: 7,
-    })
+    expect(lines).toMatchObject([
+      { message: 'tables truncated', target: 'nonprod', tables: 1 },
+      { message: 'table copied', target: 'nonprod', table: 'public.parents', rows: 7 },
+    ])
   })
 })

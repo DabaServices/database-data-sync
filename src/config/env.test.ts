@@ -19,6 +19,11 @@ const valid = {
 
 const ssl = { rejectUnauthorized: true, ca: 'ca-pem', key: 'key-pem', cert: 'cert-pem' }
 
+const without = (...prefixes: string[]) =>
+  Object.fromEntries(
+    Object.entries(valid).filter(([key]) => !prefixes.some((prefix) => key.startsWith(prefix))),
+  )
+
 describe('loadDbConfig', () => {
   it('connects to prod and pre-prod with certificates, no password, default schema', () => {
     const config = loadDbConfig(valid)
@@ -69,6 +74,27 @@ describe('loadDbConfig', () => {
   it('names the missing variable', () => {
     const { NONPROD_DB_PASSWORD: _omitted, ...env } = valid
     expect(() => loadDbConfig(env)).toThrow(/NONPROD_DB_PASSWORD/)
+  })
+
+  it('syncs only non-prod when pre-prod is not configured', () => {
+    const config = loadDbConfig(without('PREPROD_'))
+
+    expect(config.targets.map((target) => target.name)).toEqual(['nonprod'])
+  })
+
+  it('syncs only pre-prod when non-prod has no connection settings', () => {
+    const env = { ...without('NONPROD_'), NONPROD_DB_HOST: '', NONPROD_DB_SCHEMA: 'shoval' }
+
+    expect(loadDbConfig(env).targets.map((target) => target.name)).toEqual(['preprod'])
+  })
+
+  it('requires at least one target', () => {
+    expect(() => loadDbConfig(without('PREPROD_', 'NONPROD_'))).toThrow(/at least one target/)
+  })
+
+  it('names the missing variable of a partly configured target', () => {
+    const { PREPROD_DB_USER: _omitted, ...env } = without('NONPROD_')
+    expect(() => loadDbConfig(env)).toThrow(/PREPROD_DB_USER/)
   })
 
   it('requires the certificates', () => {

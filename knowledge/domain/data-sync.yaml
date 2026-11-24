@@ -6,25 +6,26 @@ system:
     - step: Validate
       description: Validate the table list and the per-database connection settings before connecting.
       details:
+        - Prod is required; at least one of pre-prod and non-prod must be configured. A target is enabled when any of its connection variables (not DB_SCHEMA) is non-empty; an enabled target with missing variables aborts the run.
         - Prod and pre-prod connect over SSL with a shared client certificate and no password; non-prod uses a password without SSL.
         - Each connection sets search_path from its optional DB_SCHEMA (default shoval).
         - A target pointing at the production database (host, database name) aborts the run.
-    - step: Per target (preprod, then nonprod)
+    - step: Per target (preprod, then nonprod; only those configured)
       description: Sync one target in isolation.
       details:
         - Open prod in a READ ONLY REPEATABLE READ transaction for a consistent snapshot.
         - On the target, in one transaction, run a single TRUNCATE of all configured tables.
-        - For each table in config order, stream COPY TO STDOUT from prod into COPY FROM STDIN on the target.
+        - For each table in config order, stream binary COPY TO STDOUT from prod into binary COPY FROM STDIN on the target; backpressure keeps memory flat regardless of table size.
         - COMMIT on success; ROLLBACK on any error so the target keeps its previous data.
     - step: Report
-      description: Log JSON lines per table and per target; exit code 1 if any target failed.
+      description: Log JSON lines for run start, target start, truncate, each table, each target result, and a run summary; exit code 1 if any target failed.
   design_decisions:
     - rule: One TRUNCATE statement for all tables, no CASCADE.
       rationale: Postgres refuses to truncate FK-referenced tables separately; CASCADE could wipe tables outside the list.
     - rule: Load tables in config order instead of deferring constraints.
       rationale: SET CONSTRAINTS DEFERRED only works for DEFERRABLE foreign keys.
-    - rule: Assumes target tables have the same columns in the same order as prod; sequences are not reset.
-      rationale: DDL is managed elsewhere and kept identical; SELECT * keeps the copy simple.
+    - rule: Assumes target tables have the same columns in the same order and with the same types as prod; sequences are not reset.
+      rationale: DDL is managed elsewhere and kept identical; SELECT * keeps the copy simple, and binary COPY (chosen to save server CPU on large tables) fails on any column type mismatch, which rolls the target back.
     - rule: The source transaction is never ended with an explicit ROLLBACK; it ends when runSync closes the connection.
       rationale: If a target COPY fails, the source COPY OUT is aborted mid-stream and the connection stays busy, so a ROLLBACK would wait forever and hang the job.
     - rule: The same-database guard compares host and database name only (the default port is always used).

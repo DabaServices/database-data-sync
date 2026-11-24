@@ -78,4 +78,30 @@ describe('runSync', () => {
       { target: 'nonprod', ok: true },
     ])
   })
+
+  it('logs the run start, each target start, and a summary', async () => {
+    const lines: Record<string, unknown>[] = []
+    const recorder = createLogger((line) => lines.push(JSON.parse(line) as Record<string, unknown>))
+    const open = openFrom({
+      'prod.db': createFakeDatabase(),
+      'preprod.db': new Error('connect failed'),
+      'nonprod.db': createFakeDatabase(),
+    })
+
+    await runSync({ config, tables, open, logger: recorder })
+
+    expect(lines[0]).toMatchObject({
+      message: 'sync started',
+      targets: ['preprod', 'nonprod'],
+      tables: 2,
+    })
+    expect(lines).toContainEqual(
+      expect.objectContaining({ message: 'target started', target: 'nonprod' }),
+    )
+    expect(lines.at(-1)).toMatchObject({
+      message: 'sync finished',
+      succeeded: ['nonprod'],
+      failed: ['preprod'],
+    })
+  })
 })

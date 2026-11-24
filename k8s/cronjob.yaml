@@ -27,6 +27,7 @@ spec:
                 - { name: PROD_DB_USER, value: readonly_user }
                 - { name: PROD_DB_NAME, value: app }
                 - { name: PROD_DB_SCHEMA, value: shoval }
+                # Targets: keep at least one of PREPROD_* / NONPROD_*; delete a target's lines to skip it
                 - { name: PREPROD_DB_HOST, value: preprod-host }
                 - { name: PREPROD_DB_USER, value: sync_user }
                 - { name: PREPROD_DB_NAME, value: app }
@@ -36,9 +37,11 @@ spec:
                 - { name: NONPROD_DB_NAME, value: app }
                 - { name: NONPROD_DB_SCHEMA, value: shoval }
                 # Secrets
+                # Optional so the pod starts when non-prod is not configured
                 - name: NONPROD_DB_PASSWORD
                   valueFrom:
-                    secretKeyRef: { name: database-data-sync, key: NONPROD_DB_PASSWORD }
+                    secretKeyRef:
+                      { name: database-data-sync, key: NONPROD_DB_PASSWORD, optional: true }
                 - name: CERTIFICATE_CA
                   valueFrom:
                     secretKeyRef: { name: database-data-sync, key: CERTIFICATE_CA }

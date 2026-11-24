@@ -4,18 +4,18 @@ A CronJob (run once or twice a day) that copies data from selected **production*
 
 ## How it works
 
-For each target (pre-prod, then non-prod), independently:
+For each configured target (pre-prod, then non-prod), independently:
 
 1. Open production in a `READ ONLY REPEATABLE READ` transaction (one consistent snapshot).
 2. In a single target transaction, run one `TRUNCATE` of all configured tables.
-3. For each table, in the configured order, stream `COPY (SELECT * FROM t) TO STDOUT` from production into `COPY t FROM STDIN` on the target.
+3. For each table, in the configured order, stream `COPY (SELECT * FROM t) TO STDOUT WITH (FORMAT binary)` from production into `COPY t FROM STDIN WITH (FORMAT binary)` on the target. Rows stream through with backpressure, so memory stays flat regardless of table size; binary format avoids text conversion on both servers but requires identical column types.
 4. `COMMIT`. On any error the target is rolled back and keeps its previous data.
 
-A failure on one target does not stop the other. The process exits with code 1 if any target failed. Logs are JSON lines on stdout (per table and per target: rows and duration).
+A failure on one target does not stop the other. The process exits with code 1 if any target failed. Logs are JSON lines on stdout: run start (targets, table count), target start, truncate, each table copied (rows, duration), each target's result, and a final summary (succeeded and failed targets).
 
 ## Configuration
 
-Each database has its own prefixed variables (`PROD_`, `PREPROD_`, `NONPROD_`):
+Each database has its own prefixed variables (`PROD_`, `PREPROD_`, `NONPROD_`). Prod is required; configure at least one of pre-prod and non-prod. A target is skipped when none of its connection variables are set (`*_DB_SCHEMA` alone does not count), and the run fails if a target is only partly configured:
 
 | Variable                                               | Description                                                          |
 | ------------------------------------------------------ | -------------------------------------------------------------------- |
@@ -51,7 +51,7 @@ docker build -t <registry>/database-data-sync:<tag> .
 docker push <registry>/database-data-sync:<tag>
 ```
 
-Then in [`k8s/cronjob.yaml`](k8s/cronjob.yaml) set the image, `schedule` (default `0 2,14 * * *`) and `timeZone`, create a Secret named `database-data-sync` with the password and certificate keys (`NONPROD_DB_PASSWORD`, `CERTIFICATE_CA`, `CERTIFICATE_KEY`, `CERTIFICATE_CSR`), adjust the plain `*_DB_*` values in the manifest, and apply it. `concurrencyPolicy: Forbid` prevents overlapping runs.
+Then in [`k8s/cronjob.yaml`](k8s/cronjob.yaml) set the image, `schedule` (default `0 2,14 * * *`) and `timeZone`, create a Secret named `database-data-sync` with the password and certificate keys (`NONPROD_DB_PASSWORD`, `CERTIFICATE_CA`, `CERTIFICATE_KEY`, `CERTIFICATE_CSR`; the password is only needed when non-prod is configured), adjust the plain `*_DB_*` values in the manifest (delete a target's lines to skip it), and apply it. `concurrencyPolicy: Forbid` prevents overlapping runs.
 
 ## Scripts
 
@@ -59,6 +59,7 @@ Then in [`k8s/cronjob.yaml`](k8s/cronjob.yaml) set the image, `schedule` (defaul
 | -------------------- | -------------------------------------------------------------- |
 | `pnpm build`         | Compile TypeScript to `dist/`                                  |
 | `pnpm start`         | Run the compiled job                                           |
+| `pnpm zip`           | Clean build and pack a runnable `build/database-data-sync.zip` |
 | `pnpm test`          | Run unit tests                                                 |
 | `pnpm typecheck`     | Type-check without emitting                                    |
 | `pnpm lint`          | Lint with ESLint                                               |
@@ -66,6 +67,8 @@ Then in [`k8s/cronjob.yaml`](k8s/cronjob.yaml) set the image, `schedule` (defaul
 | `pnpm check`         | Run format check, lint, and typecheck                          |
 | `pnpm check:changed` | Quiet checks + tests for changed files (use after each change) |
 | `pnpm check:all`     | Quiet checks + all tests                                       |
+
+`pnpm zip` (or `npm run zip`) contains only `dist/*.js`, `package.json`, the lockfile, `pnpm-workspace.yaml` and `.env.example`. To run it elsewhere (Node 24 + pnpm): unzip, copy `.env.example` to `.env` and fill it in, then `pnpm install --prod --frozen-lockfile` and `node --env-file=.env dist/index.js`.
 
 ## Conventions and AI agents
 

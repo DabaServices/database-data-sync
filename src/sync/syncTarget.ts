@@ -27,12 +27,18 @@ export async function syncTarget({
   try {
     // One statement: Postgres only allows truncating FK-referenced tables together.
     await target.query(`TRUNCATE ${quoted.map((table) => table.sql).join(', ')}`)
+    logger.info('tables truncated', { target: targetName, tables: quoted.length })
 
     let total = 0
     for (const { name, sql } of quoted) {
       const startedAt = Date.now()
-      const sink = target.copyFrom(`COPY ${sql} FROM STDIN`)
-      await pipeline(source.copyTo(`COPY (SELECT * FROM ${sql}) TO STDOUT`), sink)
+      // Binary skips text formatting/parsing of every value on both servers; it relies on
+      // target columns having exactly the same types as prod (a mismatch fails and rolls back).
+      const sink = target.copyFrom(`COPY ${sql} FROM STDIN WITH (FORMAT binary)`)
+      await pipeline(
+        source.copyTo(`COPY (SELECT * FROM ${sql}) TO STDOUT WITH (FORMAT binary)`),
+        sink,
+      )
       const rows = sink.rowCount ?? 0
       total += rows
       logger.info('table copied', {

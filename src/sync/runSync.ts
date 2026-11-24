@@ -24,9 +24,15 @@ export async function runSync({
   logger,
 }: RunSyncOptions): Promise<SyncResult[]> {
   const results: SyncResult[] = []
+  const runStartedAt = Date.now()
+  logger.info('sync started', {
+    targets: config.targets.map((target) => target.name),
+    tables: tables.length,
+  })
 
   for (const target of config.targets) {
     const startedAt = Date.now()
+    logger.info('target started', { target: target.name })
     let source: ManagedDatabase | undefined
     let sink: ManagedDatabase | undefined
     try {
@@ -55,5 +61,10 @@ export async function runSync({
     }
   }
 
+  logger.info('sync finished', {
+    succeeded: results.filter((result) => result.ok).map((result) => result.target),
+    failed: results.filter((result) => !result.ok).map((result) => result.target),
+    durationMs: Date.now() - runStartedAt,
+  })
   return results
 }
